@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import personService from "./services/persons";
 import { Filter, PersonForm, Persons } from "./components/Person";
+import Notification from "./components/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [searchPerson, setSearchPerson] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState(null);
+  const [notificationType, setNotificationType] = useState("success");
 
   useEffect(() => {
     personService.getAll().then((initialPersons) => {
@@ -14,6 +17,14 @@ const App = () => {
       setPersons(initialPersons);
     });
   }, []);
+
+  const showNotification = (message, type) => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setTimeout(() => {
+      setNotificationMessage(null);
+    }, 4000);
+  };
 
   const removePersonOf = (id) => {
     const person = persons.find((n) => n.id === id);
@@ -23,9 +34,13 @@ const App = () => {
         .remove(id)
         .then(() => {
           setPersons(persons.filter((person) => person.id !== id));
+          showNotification(`Successfully deleted '${person.name}'`, "success");
         })
         .catch((error) => {
-          alert(`The person '${person.name}' was already deleted from server`);
+          showNotification(
+            `The person '${person.name}' was already deleted from server`,
+            "error"
+          );
           setPersons(persons.filter((n) => n.id !== id));
         });
     }
@@ -52,18 +67,24 @@ const App = () => {
                 person.id !== existingPerson.id ? person : returnedPerson
               )
             );
+            showNotification(
+              `Updated number for '${existingPerson.name}'`,
+              "success"
+            );
             setNewName("");
             setNewNumber("");
           })
           .catch((error) => {
-            alert(
-              `The person '${existingPerson.name}' was already deleted from server`
+            showNotification(
+              `Information of '${existingPerson.name}' has already been removed from server`,
+              "error"
             );
             setPersons(
               persons.filter((person) => person.id !== existingPerson.id)
             );
           });
       }
+
       return;
     }
 
@@ -72,11 +93,17 @@ const App = () => {
       number: newNumber,
     };
 
-    personService.create(newPerson).then((returnedPerson) => {
-      setPersons(persons.concat(returnedPerson));
-      setNewName("");
-      setNewNumber("");
-    });
+    personService
+      .create(newPerson)
+      .then((returnedPerson) => {
+        setPersons(persons.concat(returnedPerson));
+        showNotification(`Added '${newName}'`, "success");
+        setNewName("");
+        setNewNumber("");
+      })
+      .catch((error) => {
+        showNotification(`Failed to add '${newName}'`, "error");
+      });
   };
 
   const handleNameChange = (event) => {
@@ -98,6 +125,7 @@ const App = () => {
   return (
     <div>
       <h1>Phonebook</h1>
+      <Notification message={notificationMessage} type={notificationType} />
       <Filter
         searchPerson={searchPerson}
         handleSearchChange={handleSearchChange}
