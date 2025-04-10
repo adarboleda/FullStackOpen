@@ -16,7 +16,6 @@ const CountryInfo = ({ country }) => {
       return;
     }
 
-    // Obtenemos la API key
     const api_key = import.meta.env.VITE_WEATHER_API_KEY;
 
     if (!api_key) {
@@ -25,7 +24,6 @@ const CountryInfo = ({ country }) => {
       return;
     }
 
-    // Construimos la URL
     const url = `https://api.openweathermap.org/data/2.5/weather?q=${capital}&units=metric&appid=${api_key}`;
 
     setLoading(true);
